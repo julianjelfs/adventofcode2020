@@ -1,18 +1,27 @@
 module Day1
-  ( solve
+  ( partOne,
+    partTwo,
   )
 where
 
-import           Common                         ( mapLines )
-import           Text.Read                      ( readMaybe )
+import Common (mapLines)
 
-solve :: IO (Maybe Int)
-solve = do
-  l <- mapLines (fmap fuel . readMaybe) "data/day1.txt"
-  pure $ fmap sum . sequence $ l
+partOne :: IO Int
+partOne = do
+  numbers <- mapLines read "data/day1.txt"
+  let pairs =
+        [ (i, j) | i <- numbers, j <- numbers, i + j == 2020
+        ]
+  pure $ case pairs of
+    (i, j) : _ -> i * j
+    _ -> 0
 
-fuel :: Int -> Int
-fuel n | f > 0     = f + fuel f
-       | otherwise = 0
-  where f = (n `div` 3) - 2
-
+partTwo :: IO Int
+partTwo = do
+  numbers <- mapLines read "data/day1.txt"
+  let pairs =
+        [ (i, j, k) | i <- numbers, j <- numbers, k <- numbers, i + j + k == 2020
+        ]
+  pure $ case pairs of
+    (i, j, k) : _ -> i * j * k
+    _ -> 0
