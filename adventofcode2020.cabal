@@ -18,6 +18,7 @@ executable adventofcode2020
   ghc-options:         -Wall -fwarn-tabs -O0 -fno-warn-type-defaults -Wno-missing-signatures
                        -fno-warn-name-shadowing
   other-modules:       Day1
+                      , Day2
                       , Common
                       , Convertible
   main-is:             Main.hs
