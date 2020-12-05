@@ -21,6 +21,7 @@ executable adventofcode2020
                       , Day2
                       , Day3
                       , Day4
+                      , Day5
                       , Common
                       , Convertible
   main-is:             Main.hs
