@@ -1,35 +1,58 @@
 module Day7
   ( partOne,
     partTwo,
-    parseRule,
   )
 where
 
 import Common (mapLines, numberParser, parse)
+import Data.Either (rights)
+import qualified Data.Map as M
+import qualified Data.Set as S
 import Text.Parsec
 import Text.ParserCombinators.Parsec
   ( Parser,
   )
 
-data NumberOfBags = NumberOfBags String Int deriving (Show)
+type Rules = M.Map String [(String, Int)]
 
-ruleParser :: Parser (String, [NumberOfBags])
+ruleParser :: Parser (String, [(String, Int)])
 ruleParser = do
   colour <- manyTill anyChar (try (string " bags contain "))
   bags <- [] <$ string "no other bags" <|> sepBy bagParser (char ',' <* spaces)
   _ <- char '.'
-  pure $ (colour, bags)
+  pure (colour, bags)
 
-bagParser :: Parser NumberOfBags
+bagParser :: Parser (String, Int)
 bagParser = do
   n <- numberParser <* spaces
   colour <- manyTill anyChar (try (string " bags") <|> try (string " bag"))
-  pure $ NumberOfBags colour n
+  pure (colour, n)
 
-parseRule = Common.parse ruleParser
+bagsThatCanContain :: String -> Rules -> S.Set String
+bagsThatCanContain colour rules =
+  foldr
+    ( \p agg ->
+        S.union agg (bagsThatCanContain p rules)
+    )
+    parents
+    parents
+  where
+    parents = S.fromList . M.keys $ M.filter (any (\(c, _) -> c == colour)) rules
 
-partOne :: IO [Either ParseError (String, [NumberOfBags])]
-partOne = mapLines parseRule "data/day7.txt"
+countContainedBags :: String -> Rules -> Int
+countContainedBags colour rules =
+  case M.lookup colour rules of
+    Nothing -> error "could not find bag"
+    Just bags' -> sum (subBag <$> bags')
+      where
+        subBag (c, n) = n + n * countContainedBags c rules
+
+partOne :: IO Int
+partOne =
+  S.size . bagsThatCanContain "shiny gold" . M.fromList . rights
+    <$> mapLines (Common.parse ruleParser) "data/day7.txt"
 
 partTwo :: IO Int
-partTwo = undefined
+partTwo =
+  countContainedBags "shiny gold" . M.fromList . rights
+    <$> mapLines (Common.parse ruleParser) "data/day7.txt"
