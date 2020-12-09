@@ -1,4 +1,6 @@
 module Main where
 
-main :: IO ()
-main = undefined
+import Day9
+
+main :: IO [(Int, [Int])]
+main = Day9.partTwo
