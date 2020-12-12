@@ -3,44 +3,70 @@ module Day12 where
 import Common (mapLines)
 import Data.List (foldl')
 
-data State = State (Int, Int) Int
+type Pos = (Int, Int)
 
-data Instr
-  = GoNorth Int
-  | GoSouth Int
-  | GoEast Int
-  | GoWest Int
-  | TurnLeft Int
-  | TurnRight Int
-  | GoForwards Int
-  deriving (Show)
+type State = (Pos, Int)
+
+type State2 = (Pos, Pos)
+
+type Instr = (Char, Int)
 
 partOne :: IO Int
-partOne = measure . follow <$> mapLines parseInstruction "data/day12.txt"
+partOne = manhattanDistance . followOne <$> mapLines parseInstruction "data/day12.txt"
 
 partTwo :: IO Int
-partTwo = undefined
+partTwo = manhattanDistance . followTwo <$> mapLines parseInstruction "data/day12.txt"
+
+rotate90 :: Pos -> Pos
+rotate90 (x, y) = (y, - x)
 
 steps :: Int -> Int
 steps 90 = 1
 steps 180 = 2
 steps 270 = 3
+steps (-90) = 3
+steps (-180) = 2
+steps (-270) = 1
 steps _ = error "not again"
 
-follow :: [Instr] -> State
-follow =
+followTwo :: [Instr] -> State2
+followTwo =
   foldl'
-    ( \(State (x, y) d) i ->
+    ( \(ship, waypoint) i ->
         case i of
-          GoNorth n -> State (x, y + n) d
-          GoSouth n -> State (x, y - n) d
-          GoEast n -> State (x + n, y) d
-          GoWest n -> State (x - n, y) d
-          TurnLeft n -> State (x, y) (turn (-) n d)
-          TurnRight n -> State (x, y) (turn (+) n d)
-          GoForwards n -> State (forwards n (x, y) d) d
+          ('N', n) -> (ship, moveY n waypoint)
+          ('S', n) -> (ship, moveY (- n) waypoint)
+          ('E', n) -> (ship, moveX n waypoint)
+          ('W', n) -> (ship, moveX (- n) waypoint)
+          ('L', n) -> (ship, rotate (- n) waypoint)
+          ('R', n) -> (ship, rotate n waypoint)
+          ('F', n) -> (forwards n ship waypoint, waypoint)
+          _ -> (ship, waypoint)
     )
-    (State (0, 0) 0)
+    ((0, 0), (10, 1))
+  where
+    forwards n (sx, sy) (wx, wy) = (sx + n * wx, sy + n * wy)
+    moveY n (x, y) = (x, y + n)
+    moveX n (x, y) = (x + n, y)
+    rotate n (x, y) = rotateN (x, y)
+      where
+        rotateN = foldr (.) id (replicate (steps n) rotate90)
+
+followOne :: [Instr] -> State
+followOne =
+  foldl'
+    ( \((x, y), d) i ->
+        case i of
+          ('N', n) -> ((x, y + n), d)
+          ('S', n) -> ((x, y - n), d)
+          ('E', n) -> ((x + n, y), d)
+          ('W', n) -> ((x - n, y), d)
+          ('L', n) -> ((x, y), turn (-) n d)
+          ('R', n) -> ((x, y), turn (+) n d)
+          ('F', n) -> (forwards n (x, y) d, d)
+          _ -> ((x, y), d)
+    )
+    ((0, 0), 0)
   where
     forwards n (x, y) 0 = (x + n, y)
     forwards n (x, y) 1 = (x, y - n)
@@ -49,16 +75,10 @@ follow =
     forwards _ _ _ = error "oh no"
     turn op n d = (d `op` steps n) `mod` 4
 
-measure :: State -> Int
-measure (State (x, y) _) = abs x + abs y
+manhattanDistance :: (Pos, a) -> Int
+manhattanDistance ((x, y), _) = abs x + abs y
 
 parseInstruction :: String -> Instr
 parseInstruction = \case
-  ('N' : n) -> GoNorth (read n)
-  ('S' : n) -> GoSouth (read n)
-  ('E' : n) -> GoEast (read n)
-  ('W' : n) -> GoWest (read n)
-  ('L' : n) -> TurnLeft (read n)
-  ('R' : n) -> TurnRight (read n)
-  ('F' : n) -> GoForwards (read n)
+  (c : n) -> (c, read n)
   _ -> error "invalid instruction"
