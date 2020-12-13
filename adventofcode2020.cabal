@@ -29,6 +29,7 @@ executable adventofcode2020
                       , Day10
                       , Day11
                       , Day12
+                      , Day13
                       , Common
                       , Convertible
   main-is:             Main.hs
@@ -54,6 +55,7 @@ executable adventofcode2020
                       , hspec
                       , mtl
                       , array
+                      , arithmoi
   default-extensions:  DataKinds
                      , DeriveGeneric
                      , NamedFieldPuns
