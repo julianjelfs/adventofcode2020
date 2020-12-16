@@ -1,6 +1,6 @@
 module Day15 where 
 
-import qualified Data.Map as M 
+import qualified Data.Map.Strict as M 
 import Data.List (foldl')
 
 -- key is the number, val is the iterations on which it occurred
