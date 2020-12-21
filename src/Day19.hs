@@ -1,28 +1,28 @@
 module Day19 where
 
+import Common (parse)
 import qualified Data.Map as M
+-- import Data.Maybe (catMaybes)
+import Text.Parsec
+import Text.ParserCombinators.Parsec
+  ( Parser,
+  )
 
 type Rules = M.Map String String
 
-data Rule
-  = Letter Char
-  | And Rule Rule
-  | Or Rule Rule
-  deriving (Show)
-
-buildAst :: String -> Rules -> Rule
-buildAst num rules = case M.lookup num rules of
+messageParser :: String -> Rules -> Parser String
+messageParser num rules = case M.lookup num rules of
   Nothing -> error "couldn't find the rule"
-  Just "\"a\"" -> Letter 'a'
-  Just "\"b\"" -> Letter 'b'
+  Just "\"a\"" -> string "a"
+  Just "\"b\"" -> string "b"
   Just rule ->
     let w = words rule
-        ast = flip buildAst rules
+        p = flip messageParser rules
      in case length w of
-          1 -> ast (w !! 0)
-          2 -> And (ast (w !! 0)) (ast (w !! 1))
-          3 -> Or (ast (w !! 0)) (ast (w !! 2))
-          5 -> Or (And (ast (w !! 0)) (ast (w !! 1))) (And (ast (w !! 3)) (ast (w !! 4)))
+          1 -> p (w !! 0)
+          2 -> p (w !! 0) >> p (w !! 1)
+          3 -> p (w !! 0) <|> p (w !! 2)
+          5 -> (p (w !! 0) >> p (w !! 1)) <|> (p (w !! 3) >> p (w !! 4))
           _ -> error ("unexpected pattern:" <> rule)
 
 getMessages :: IO [String]
@@ -37,5 +37,8 @@ getRules = M.fromList . fmap tuplify . take 139 <$> allLines
 allLines :: IO [String]
 allLines = lines <$> readFile "data/day19.txt"
 
-partOne :: IO Rule
-partOne = buildAst "0" <$> getRules
+partOne :: IO [Either ParseError String]
+partOne = do
+  p <- messageParser "0" <$> getRules
+  m <- getMessages
+  pure $ Common.parse p <$> m
